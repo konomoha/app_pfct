@@ -1,0 +1,243 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}PFCT - Planning{% endblock %}
+
+{% block page_content %}
+	<div class="container">
+
+			{% for message in app.flashes('success') %}
+
+				<div class="col-sm-4 mx-auto text-center alert alert-success">
+					{{message}}
+				</div>
+
+			{% endfor %}
+	
+		<h1 class="text-center">{{titletable}}</h1>
+
+        {% if 'ROLE1'  in user.roles %}
+
+            <div id="clock_user">
+            
+                <div><a id="date_minus" href=''><i class="fas fa-angle-left"></i></a><h2 class="text-center date_title" id="ejs_heure"></h2><a id="date_plus" href='' hidden><i class="fas fa-angle-right" ></i></a><a id="current_date" href='' hidden><i class="fas fa-angle-double-right" ></i></a></div>
+
+				<div style="display:none;" id="spinHistorique" class="spin" hidden></div>
+                
+                <p id="identification" class="col-5">Identification : <strong >{{user.nom}} - <span id="Agt">{{num}}</span></strong></p>
+            
+            </div>
+
+            <div class="input-group date col-sm-2 ">
+
+                <div class="input-group-addon mx-auto" >
+
+                    <span class="glyphicon glyphicon-calendar"></span>
+
+                </div>
+                
+                <input type="text" class="form-control" name="IdentificationCNC" id="datepicker_val">
+
+				
+
+            </div>
+
+        {% else %}
+
+            <div id="clock_user">
+            
+                <h2 class="text-center date_title" id="ejs_heure"></h2>
+                
+                <p id="identification" class="col-5">Identification : <strong >{{user.nom}} - <span id="Agt">{{num}}</span></strong></p>
+            
+            </div>
+
+        {% endif %}
+
+	
+		{% set time = date() %}
+
+		{% set access_in = date('08:30:00') %} {# heure de début #}
+
+		{% set access_out = date('16:30:00') %} {# heure de fin #}
+
+		{% if (time < access_in and 'ROLE2' in user.roles) or (time > access_out and 'ROLE2' in user.roles) %}
+
+			<h2 class='text-center'>Le planning n'est accessible qu'à partir de 8h30</h2>
+
+		{% else %}
+
+			{% if ('ROLE2' in user.roles and reservations is empty) or ('ROLE2' in user.roles and gestionData.verrouillage) %}
+			
+				<h2 id="schedule_title">Planning temporairement indisponible</h2>
+
+
+			{% elseif 'ROLE1' in user.roles and reservations is empty%}
+
+				<h2 id="schedule_title">Le planning n'a pas encore été généré</h2>
+				<h3 class='text-success text-center planning_link'><a href='{{path('gestion')}}'>Créer un nouveau planning !</a></h3>
+
+			{% else %}
+				<h2 id="schedule_title"> Planning du jour&nbsp;&nbsp;
+
+					{% if 'ROLE1'  in user.roles %}
+				
+						{% if gestionData.verrouillage %} 
+						
+							<a title='planning fermé' href=""><i class="fas fa-lock verrou_on text-danger" id="verrou_planning" data-idPlanning={{gestionData.id}}></i></a>
+
+						{% else %}
+
+							<a title='planning ouvert' href=""><i class="fas fa-unlock-alt verrou_off text-success" id="verrou_planning" data-idPlanning={{gestionData.id}}></i></a>
+
+						{% endif %}
+
+					{% endif %}
+				
+				</h2>
+				
+				<div class="conteneur_calendrier">
+
+					{# flèches pour naviguer dans le tableau #}
+
+					<p id="scroll_left">
+					
+						<i class="fa fa-arrow-left" aria-hidden="true"></i>
+
+					</p>
+
+					{# Planning #}
+
+					<table id='tab_historique' class='table table-bordered mx-auto' {{(reservations is empty or ('ROLE2' in user.roles and gestionData.verrouillage))? "hidden" : ""}} >
+
+						<thead id="head_historique">
+							<tr>
+
+								<th id="entete_horaire" class="text-center bg_bleu">Horaires</th>
+								{% for i in 1.. nbCreneaux %}
+									<th id="entete_creneau" class="text-center bg_bleu" colspan="1">Créneau {{i}}</th>
+								{% endfor %}
+
+							</tr>
+						</thead>
+
+						<tbody id="body_historique">
+
+							{% for pause in pauses %}
+
+								{% if fullDay is not empty %}
+
+									{{ pause.horaire == '14h00 - 14h20'? "<tr><td class='bg-white' colspan='12'></td></tr>" : ''}}
+
+								{% endif %}
+
+								<tr>
+									<td class="{{ ('ROLE1'  in user.roles)? 'text-center fw-bold cell_horaire plage' : 'text-center fw-bold cell_horaire'}}" data-stamp={{pause.stamp}}>
+									
+										<div>
+
+											{% if ('ROLE1'  in user.roles) %} 
+											
+												<span>
+													<i id='{{pause.id}}' class='fa fa-power-off plage_button text-success'></i>
+												</span>
+												<span>{{pause.horaire}}</span>
+
+											{% else %}
+
+												<span>{{pause.horaire}}</span>
+
+											{% endif %}
+
+										</div>
+
+									</td>
+
+									{% for reservation in reservations %}
+
+										{% if reservation.pause_id == pause.id %}
+
+											{% if reservation.num is not empty %}
+
+												{% if reservation.num == num %}
+
+													<td class="{{ ('ROLE1'  in user.roles)? 'bg-success text-center resa_cell taken2' : 'bg-success text-center resa_cell taken'}}">
+
+														<a id="{{reservation.id}}" class="resa_link supp_creneau text-center" href="#">
+														
+															<b>{{user.nom}}</b><br><b>{{user.prenom}}</b>
+														
+														</a>
+														{{ ('ROLE1'  in user.roles)? "<i class='fa fa-power-off boutton_actif mx-3' style='display: none;'></i>" : "" }}
+											
+													</td>
+
+												{% else %}
+
+													{% for agent in agents %}
+														
+														{% if agent.idCreneau == reservation.id %}
+
+															<td class="{{ ('ROLE1'  in user.roles)? 'bg-warning text-danger text-center resa_cell taken2' : 'bg-warning text-danger text-center resa_cell taken'}}">
+
+																<b>{{agent.nom}}</b><br><b>{{agent.prenom}}</b>
+
+															</td>
+
+														{% endif %}
+
+													{% endfor %}
+													
+												{% endif %}
+
+											{% else %}
+
+											{# Si aucune réservation affichage différent selon créneau actif/inactif #}
+												{% if  reservation.actif == true %}
+
+													<td class="bg-success text-center resa_cell">
+
+														<a id="{{reservation.id}}" class="resa_link creneau text-center" href="" >{{reservation.statut}}</a>
+														{{ ('ROLE1'  in user.roles)? "<i class='fa fa-power-off boutton_actif mx-3'></i>" : "" }}
+
+														
+
+													</td>
+
+												{% else %}
+
+													<td class="{{ ('ROLE1'  in user.roles)? 'bg-success text-center resa_cell inactif' : 'bg-success text-center resa_cell inactif2'}}">
+
+														<a id="{{reservation.id}}" class="resa_link creneau text-center" href="" style="display: none;">{{reservation.statut}}</a>
+														{{ ('ROLE1'  in user.roles)? "<i class='fa fa-power-off boutton_actif boutton_on_off'></i>" : "" }}
+												
+													</td>
+
+												{% endif %}
+
+											{% endif %}
+
+										{% endif %}
+
+									{% endfor %}
+
+								</tr>
+								
+							{% endfor %}
+
+						</tbody>
+
+					</table>
+
+					<p id="scroll_right">
+				
+						<i class="fa fa-arrow-right" aria-hidden="true" ></i>
+
+					</p>
+
+				</div>	
+			{% endif %}
+
+		{% endif %}
+
+	</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% block stylesheets %}
+	{# {{parent()}} #}
+	<link rel="stylesheet" href="{{ asset('./css/accueil.css') }}"/>
+{% endblock %}
+
+{% block page_content %}
+{# {{dump(user)}} #}
+	<div class="row">
+		<div
+			class="col-md-6 text-center" id="titleAccueil">
+			<!-- Heading -->
+			<h1 class="display-4 text-center" id="textAccueilAccess">
+                Agent non reconnu, accès à l'applicatif impossible !
+			</h1>
+			<!-- Text -->
+			<p class="lead text-center text-md-left text-muted" id="text-title">
+				<b>PFCT - Gestion de Pauses</b>
+			</p>
+
+		</div>
+        
+	</div>
+
+{% endblock %}

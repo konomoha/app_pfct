@@ -1,0 +1,44 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}PFCT - Formulaire{% endblock %}
+
+{% block page_content %}
+
+   
+
+    <div class="form_conteneur">
+
+        {{ (verifResa == false)? "<h2>Générer le planning du jour</h2>" : "<h2 class='text-danger'>Attention : Planning du jour déjà existant !</h2>" }}
+
+
+
+            {{form_start(formGestion, {'attr': {'class': 'formulaire_pause'} }) }}
+
+                <div class="form_creneau">{{form_errors(formGestion.nbCreneaux)}}</div>
+                
+                <div class="form_creneau">
+                    <div class="form_label">{{form_label(formGestion.nbCreneaux)}} :</div>
+                    {{form_widget(formGestion.nbCreneaux)}}
+                    
+                </div>
+
+                <div class="form_creneau">
+
+                    <div class="form_label">{{form_label(formGestion.meridien)}} :</div>
+                    <div class="meridien_select">{{form_widget(formGestion.meridien)}}</div>
+                </div>
+
+                <div class="form_boutton">
+
+                    <div id="spinHistorique" class="spin" hidden></div>&nbsp;&nbsp;&nbsp;
+
+                    {{form_row(formGestion.Generer, {'attr': {'data-verifResa': verifResa}})}}
+
+                </div>
+
+            {{form_end(formGestion)}}
+
+
+    </div>
+
+{% endblock %}
